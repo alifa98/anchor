@@ -2,7 +2,9 @@ package com.example.psycho.model
 
 import android.content.Context
 import android.util.Log
+import java.io.File
 import com.google.ai.edge.litertlm.Backend
+import com.google.ai.edge.litertlm.ExperimentalFlags
 import com.google.ai.edge.litertlm.Content
 import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.Message
@@ -67,6 +69,9 @@ class GemmaEngineHolder(
 
         _state.value = EngineState.Loading
         try {
+            // use Multi-Token Prediction (MTP) for better performance.
+//            ExperimentalFlags.enableSpeculativeDecoding = true
+
             val modelPath = ModelAssets.modelFile(context).absolutePath
             val cacheDir = context.cacheDir.absolutePath
 
@@ -131,8 +136,7 @@ class GemmaEngineHolder(
     }
 
     private fun extractText(message: Message): String =
-        message.contents.contents
-            .filterIsInstance<Content.Text>()
+        message.contents.contents.filterIsInstance<Content.Text>()
             .joinToString(separator = "") { it.text }
 
     fun scheduleUnload() {
@@ -165,11 +169,17 @@ class GemmaEngineHolder(
 
     private fun buildEngine(modelPath: String, cacheDir: String, preferGpu: Boolean): Engine {
         val backend = if (preferGpu) Backend.GPU() else Backend.CPU()
+        Log.i(tag, "Attempting to build engine with backend: ${if (preferGpu) "GPU" else "CPU"}")
+
+        // separate cache subdirs to avoid backend conflicts if one fails.
+        val subCacheDir = File(cacheDir, if (preferGpu) "gpu" else "cpu").apply { mkdirs() }
+
         val config = EngineConfig(
             modelPath = modelPath,
             backend = backend,
-            audioBackend = Backend.CPU(),  // load the audio tower
-            cacheDir = cacheDir,
+            audioBackend = Backend.CPU(),  // Audio tower usually stays on CPU
+            cacheDir = subCacheDir.absolutePath,
+            maxNumTokens = 3072, // ~1784 (audio) + ~300 (prompts) + 256 (output) = ~2340
         )
         val e = Engine(config)
         try {
@@ -189,11 +199,12 @@ class GemmaEngineHolder(
         systemInstruction = Contents.of(SYSTEM_PROMPT),
         initialMessages = emptyList(),
         tools = emptyList(),
+        automaticToolCalling = false,
         samplerConfig = SamplerConfig(
-            /* topK = */ 40,
-            /* topP = */ 0.9,
-            /* temperature = */ 0.4,
-            /* seed = */ 0,
+            topK = 40,
+            topP = 0.9,
+            temperature = 0.4,
+            seed = 0,
         ),
     )
 
