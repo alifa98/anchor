@@ -25,7 +25,7 @@ object ModelAssets {
 
     fun isModelInstalled(context: Context): Boolean {
         val m = modelFile(context)
-        // Heuristic: real model is ~2.5 GB. Anything < 1 GB is a partial.
-        return m.exists() && m.length() > 1_000_000_000L
+        // Heuristic: real model is ~2.5 GB. Anything < 2 GB is likely partial or corrupted.
+        return m.exists() && m.length() > 2_000_000_000L
     }
 }
