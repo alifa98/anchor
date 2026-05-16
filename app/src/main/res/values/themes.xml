@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Psycho" parent="android:Theme.Material.Light.NoActionBar">
+    <style name="Theme.Anchor" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
 
-    <style name="Theme.Psycho.Splash" parent="Theme.SplashScreen">
+    <style name="Theme.Anchor.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/anchor_logo</item>
-        <item name="postSplashScreenTheme">@style/Theme.Psycho</item>
+        <item name="postSplashScreenTheme">@style/Theme.Anchor</item>
     </style>
 </resources>

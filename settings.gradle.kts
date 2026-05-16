@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "psycho"
+rootProject.name = "anchor"
 include(":app")

@@ -12,7 +12,7 @@ kotlin {
 }
 
 android {
-    namespace = "com.example.psycho"
+    namespace = "info.faraji.anchor"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -20,7 +20,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.psycho"
+        applicationId = "info.faraji.anchor"
         minSdk = 27
         targetSdk = 36
         versionCode = 1
