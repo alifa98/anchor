@@ -8,7 +8,7 @@
 
     <style name="Theme.Psycho.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/anchor_logo</item>
         <item name="postSplashScreenTheme">@style/Theme.Psycho</item>
     </style>
 </resources>
