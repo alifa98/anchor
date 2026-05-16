@@ -23,7 +23,7 @@ class RollingPcmBuffer(
     @Volatile private var totalWritten: Long = 0L
 
     /** Append samples produced by AudioRecord. Producer thread only. */
-    fun append(src: ShortArray, offset: Int, length: Int) {
+    fun append(src: ShortArray, offset: Int, length: Int) = synchronized(this) {
         if (length <= 0) return
         var remaining = length
         var srcPos = offset
@@ -40,13 +40,15 @@ class RollingPcmBuffer(
     }
 
     /** Number of samples currently filled (caps at capacity). */
-    val filledSamples: Int get() = minOf(totalWritten, capacity.toLong()).toInt()
+    val filledSamples: Int get() = synchronized(this) {
+        minOf(totalWritten, capacity.toLong()).toInt()
+    }
 
     /**
      * Take a copy of the current window in chronological order (oldest first).
      * Returned array length == filledSamples.
      */
-    fun snapshotPcm(): ShortArray {
+    fun snapshotPcm(): ShortArray = synchronized(this) {
         val w = writeIndex
         val total = totalWritten
         val filled = minOf(total, capacity.toLong()).toInt()
@@ -65,12 +67,18 @@ class RollingPcmBuffer(
     }
 
     /** WAV-encoded snapshot (16-bit PCM, mono). */
-    fun snapshotWav(): ByteArray {
+    fun snapshotWav(): ByteArray = synchronized(this) {
         val pcm = snapshotPcm()
         return encodeWav(pcm, sampleRateHz)
     }
 
-    fun reset() {
+    fun consumeWav(): ByteArray = synchronized(this) {
+        val wav = snapshotWav()
+        reset()
+        return wav
+    }
+
+    fun reset() = synchronized(this) {
         writeIndex = 0
         totalWritten = 0L
     }

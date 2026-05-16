@@ -96,7 +96,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun verifyNow() {
         val svc = boundService ?: return
         if (_isVerifying.value) return
-        val wav = svc.snapshotWav()
+        val wav = svc.consumeWav()
         _isVerifying.value = true
         _transcript.value = ""
         viewModelScope.launch {

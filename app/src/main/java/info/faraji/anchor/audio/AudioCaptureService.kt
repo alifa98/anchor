@@ -34,12 +34,16 @@ import kotlin.concurrent.thread
 class AudioCaptureService : Service() {
 
     private val binder = LocalBinder()
-    private val buffer = RollingPcmBuffer(sampleRateHz = SAMPLE_RATE, windowSeconds = WINDOW_SECONDS)
+    private val buffer =
+        RollingPcmBuffer(sampleRateHz = SAMPLE_RATE, windowSeconds = WINDOW_SECONDS)
     private val _isCapturing = MutableStateFlow(false)
     private val _rmsLevel = MutableStateFlow(0f)
 
-    @Volatile private var captureThread: Thread? = null
-    @Volatile private var keepGoing: Boolean = false
+    @Volatile
+    private var captureThread: Thread? = null
+
+    @Volatile
+    private var keepGoing: Boolean = false
 
     inner class LocalBinder : Binder() {
         val service: AudioCaptureService get() = this@AudioCaptureService
@@ -49,6 +53,7 @@ class AudioCaptureService : Service() {
     val rmsLevel: StateFlow<Float> get() = _rmsLevel.asStateFlow()
 
     fun snapshotWav(): ByteArray = buffer.snapshotWav()
+    fun consumeWav(): ByteArray = buffer.consumeWav()
     fun snapshotPcm(): ShortArray = buffer.snapshotPcm()
     val sampleRateHz: Int get() = buffer.sampleRateHz
 
@@ -67,6 +72,7 @@ class AudioCaptureService : Service() {
                 stopSelf()
                 return START_NOT_STICKY
             }
+
             else -> {
                 startForegroundCompat()
                 startCapture()
@@ -83,7 +89,8 @@ class AudioCaptureService : Service() {
     private fun startCapture() {
         if (_isCapturing.value) return
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-            != PackageManager.PERMISSION_GRANTED) {
+            != PackageManager.PERMISSION_GRANTED
+        ) {
             return
         }
 
@@ -94,13 +101,16 @@ class AudioCaptureService : Service() {
         )
         val bufSize = maxOf(minBuf, SAMPLE_RATE) // ~1 sec headroom
 
+        val audioSource = MediaRecorder.AudioSource.UNPROCESSED // Avoid any filter just get raw data
+
         val record = AudioRecord(
-            MediaRecorder.AudioSource.MIC,
+            audioSource,
             SAMPLE_RATE,
             AudioFormat.CHANNEL_IN_MONO,
             AudioFormat.ENCODING_PCM_16BIT,
             bufSize,
         )
+
         if (record.state != AudioRecord.STATE_INITIALIZED) {
             record.release()
             return
@@ -124,7 +134,10 @@ class AudioCaptureService : Service() {
                     }
                 }
             } finally {
-                try { record.stop() } catch (_: Throwable) {}
+                try {
+                    record.stop()
+                } catch (_: Throwable) {
+                }
                 record.release()
                 _isCapturing.value = false
                 _rmsLevel.value = 0f

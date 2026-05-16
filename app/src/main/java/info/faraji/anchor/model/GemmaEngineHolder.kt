@@ -58,9 +58,18 @@ class GemmaEngineHolder(
     private val _state = MutableStateFlow<EngineState>(EngineState.Unloaded)
     val state: StateFlow<EngineState> = _state.asStateFlow()
 
-    suspend fun ensureLoaded(): Boolean = mutex.withLock {
+    suspend fun ensureLoaded(forceNewConversation: Boolean = false): Boolean = mutex.withLock {
         cancelPendingUnload()
-        if (engine != null) return@withLock true
+        if (engine != null) {
+            if (forceNewConversation) {
+            // TODO: Maybe later for follow up button we will not need to reset the conversation
+                runCatching { conversation?.close() }
+                conversation = withContext(Dispatchers.Default) {
+                    engine?.createConversation(buildConversationConfig())
+                }
+            }
+            return@withLock true
+        }
         if (!ModelAssets.isModelInstalled(context)) {
             _state.value = EngineState.Error("Model not installed")
             return@withLock false
@@ -104,7 +113,8 @@ class GemmaEngineHolder(
         userPrompt: String? = null,
         onToken: (String) -> Unit,
     ): Result<String> = runCatching {
-        if (!ensureLoaded()) error("Model not ready")
+        // Start a fresh conversation for every explicit verification request
+        if (!ensureLoaded(forceNewConversation = true)) error("Model not ready")
         val conv = conversation ?: error("Conversation missing")
 
         val text = userPrompt ?: DEFAULT_VERIFY_PROMPT
@@ -202,7 +212,7 @@ class GemmaEngineHolder(
         samplerConfig = SamplerConfig(
             topK = 40,
             topP = 0.9,
-            temperature = 0.4,
+            temperature = 0.0,
             seed = 0,
         ),
     )
@@ -213,15 +223,16 @@ class GemmaEngineHolder(
         // reality-check, not their conversation partner.
         private val SYSTEM_PROMPT = """
             You are an objective audio observer for a person who may
-            experience auditory hallucinations. The user gives you the last
-            60 seconds of audio from their environment. Listen to it and
+            experience auditory hallucinations. The user gives you a recent
+            clip of audio from their environment. Listen to it and
             label what is actually there.
 
             Format your answer as 1–3 short, factual lines. Examples of the
             style we want:
               - "Room noise only — a faint hum, no speech, no events."
-              - "Two voices in conversation. One says 'hi' near the start."
-              - "A single door knock around the 40-second mark, then silence."
+              - "Two voices in conversation. They are taking to each other."
+              - "Short sudden sound of falling on floor" 
+              - "A single door knock around the 10-second mark, then silence."
               - "Music playing in the background, no speech."
               - "Footsteps and a door closing. No voices."
 
@@ -234,8 +245,9 @@ class GemmaEngineHolder(
             - No reassurance, no speculation, no emotional framing.
             - Do not roleplay. Do not pretend to be anyone else.
         """.trimIndent()
+//         TODO: having command like - "Two voices in conversation. One says 'hi' near the start." as example. For now, the model is not capturing the conversation transcript correctly.
 
         private const val DEFAULT_VERIFY_PROMPT =
-            "Listen to this 60-second clip and tell me exactly what is in it."
+            "Listen to this audio clip and tell me exactly what is in it."
     }
 }
