@@ -9,15 +9,15 @@ Anchor is designed to be a "Zero-Trust" audio observer. The core flow involves c
 ```mermaid
 graph TD
     A[Microphone] --> B[AudioCaptureService]
-    B --> C[Rolling PCM Buffer (60s)]
-    D[MainScreen] -- Trigger Verify --> E[MainViewModel]
+    B --> C["Rolling PCM Buffer - 60s"]
+    D[MainScreen] -- "Trigger Verify" --> E[MainViewModel]
     E --> F[GemmaEngineHolder]
-    C -- Consume WAV --> F
-    F --> G[LiteRT-LM Engine]
-    G --> H[Multimodal Gemma Model]
-    H --> I[Objective Transcript]
+    C -- "Consume WAV" --> F
+    F --> G["LiteRT-LM Engine"]
+    G --> H["Multimodal Gemma Model"]
+    H --> I["Objective Transcript"]
     I --> J[HoldToSpeakTts]
-    J --> K[Speaker/Headphones]
+    J --> K["Speaker or Headphones"]
 ```
 
 ## Key Components
