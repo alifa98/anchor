@@ -96,6 +96,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun verifyNow() {
         val svc = boundService ?: return
         if (_isVerifying.value) return
+        tts.stopNow()
         val wav = svc.consumeWav()
         _isVerifying.value = true
         _transcript.value = ""
@@ -116,6 +117,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setListenButtonHeld(held: Boolean) {
         _listenButtonHeld.value = held
         tts.setPermitSpeak(held)
+        if (held && ttsEnabled.value && _transcript.value.isNotBlank()) {
+            tts.speak(_transcript.value)
+        }
     }
 
     fun setTtsEnabled(enabled: Boolean) {
