@@ -75,9 +75,19 @@ class HoldToSpeakTts(context: Context) {
      * silently — there is no buffer of pending speech to leak out later.
      */
     fun speak(text: String) {
-        if (!ready || !_permitSpeak.value || text.isBlank()) return
+        if (!ready) {
+            Log.w(tag, "speak() dropped: TTS not ready")
+            return
+        }
+        if (!_permitSpeak.value) {
+            Log.d(tag, "speak() dropped: not permitted (button not held)")
+            return
+        }
+        if (text.isBlank()) return
+
         val utteranceId = "anchor-${System.nanoTime()}"
-        tts?.speak(text, TextToSpeech.QUEUE_ADD, null, utteranceId)
+        Log.d(tag, "Speaking: ${text.take(20)}...")
+        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
     }
 
     /** Hard stop. Used on release of the Listen button and on shutdown. */
